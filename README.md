@@ -1,162 +1,166 @@
-This is a Discord music bot that streams **directly** from **Spotify to Discord**. The only interface is Spotify itself.
+# Spotify Bot
 
-> **Warning: Authentication Update (2024)**  
-> Spotify has deprecated username/password authentication. This fork includes support for **cached credentials** to fix authentication issues. See the [Authentication Setup](#authentication-setup) section below.
+A Discord music bot that streams **directly** from **Spotify to Discord**. The only interface is Spotify itself. You control playback entirely through the Spotify app.
 
-**Note**: A Spotify Premium account is currently required. This is a limitation of librespot, the Spotify library used by Aoede. [Facebook login is not supported](https://github.com/librespot-org/librespot/discussions/635).
+**Note**: A Spotify Premium account is required. This is a limitation of [librespot](https://github.com/librespot-org/librespot), the Spotify library this bot uses.
 
 ![Demo](https://raw.githubusercontent.com/codetheweb/aoede/main/.github/demo.gif)
 
-## Use Cases
+## How It Works
 
-- Small servers with friends
-- Discord Stages, broadcasting music to your audience
+1. The bot follows a specific Discord user (you)
+2. When you join a voice channel, the bot enables Spotify Connect
+3. A device (e.g. "Aoede") appears in your Spotify app's device list
+4. You select it and play music -- audio streams directly to the voice channel
+5. When you leave the voice channel, the bot disconnects and the device disappears
 
-## Usage
+## Prerequisites
 
-x86 and arm64 Docker images are provided.
-Linux x86_64 binaries and macOS ARM binaries are also available.
+- [Docker](https://docs.docker.com/get-docker/) and Docker Compose
+- A Discord bot token ([how to create one](#1-create-a-discord-bot))
+- A Spotify Premium account
+- `avahi-daemon` installed and running on the host (for Spotify Connect discovery)
 
-### Notes:
-⚠️ Spotify-bot only supports bot tokens. Providing a user token will not work.
+## Setup
 
-Spotify-bot will appear offline until you join a voice channel it can access.
+### 1. Create a Discord Bot
 
-### Docker Compose (Recommended):
+1. Go to https://discord.com/developers/applications
+2. Click **New Application**, give it a name
+3. Go to **Bot** tab, click **Reset Token**, and copy the token
+4. Go to **OAuth2 > URL Generator**
+   - Under Scopes, check **bot**
+   - Under Permissions, check **Connect**, **Speak**, **Use Voice Activity**
+5. Open the generated URL in your browser and invite the bot to your server
 
-Docker image sources:
-- ghcr.io/foylaou/aoede-foy:latest
-- s225002731650/aoede-foy:latest
-- `:latest`: Latest version
-- `:v0.10.4`: Specific version
+### 2. Get Your Discord User ID
 
-```yaml
-version: '3.8'
+1. In Discord, go to **Settings > Advanced** and enable **Developer Mode**
+2. Right-click your own username and click **Copy User ID**
 
-services:
-  aoede:
-    image: s225002731650/aoede-foy:latest
-    container_name: aoede-bot
-    restart: unless-stopped
-    
-    volumes:
-      # host_path:container_path
-      - /home/Share/aoede-Foy-/aoede-cache:/data
+### 3. Install Avahi (if not already installed)
 
-    environment:
-      - DISCORD_TOKEN=${DISCORD_TOKEN}
-      - DISCORD_USER_ID=${DISCORD_USER_ID}
-      - SPOTIFY_DEVICE_NAME=${SPOTIFY_DEVICE_NAME:-Aoede Bot}
-      - SPOTIFY_BOT_AUTOPLAY=${SPOTIFY_BOT_AUTOPLAY:-false}
-      - CACHE_DIR=/data
-    
-    # Optional: Logging configuration
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-````
-
-### Pre-built Binaries:
-
-Pre-built binaries are available on the [Releases page](https://github.com/foylaou/aoede-Foy-/releases). Download the binary for your platform, then in your terminal:
-
-# Linux && macOS
+The bot uses mDNS for Spotify Connect discovery. This requires the Avahi daemon on the host:
 
 ```bash
-chmod +x aoede-linux-x86_64
-DISCORD_TOKEN=your_token \
-DISCORD_USER_ID=your_id \
-CACHE_DIR=cache \
-SPOTIFY_BOT_AUTOPLAY=true \
-SPOTIFY_DEVICE_NAME="MUSIC BOT" \
-./aoede-linux-x86_64
+sudo apt-get install -y avahi-daemon
+sudo systemctl enable --now avahi-daemon
 ```
 
-# Windows PowerShell
+### 4. Clone and Configure
 
-```shell
-$env:DISCORD_TOKEN = ""
-$env:SPOTIFY_DEVICE_NAME = ""
-$env:DISCORD_USER_ID = 
-$env:CACHE_DIR = ""
-$env:SPOTIFY_BOT_AUTOPLAY = true
-C:\aoede.exe
+```bash
+git clone https://github.com/Aqwerty321/Spotify-bot.git
+cd Spotify-bot
+mkdir aoede-cache
 ```
 
-### Building from Source:
+Create a `.env` file:
 
-Requirements:
+```
+DISCORD_TOKEN=your_bot_token_here
+DISCORD_USER_ID=your_user_id_here
+CACHE_DIR=/data
+SPOTIFY_BOT_AUTOPLAY=true
+SPOTIFY_DEVICE_NAME=Aoede
+```
 
-* automake
-* autoconf
-* cmake
-* libtool
-* Rust
-* Cargo
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DISCORD_TOKEN` | Yes | Your Discord bot token |
+| `DISCORD_USER_ID` | Yes | Your Discord user ID -- the bot follows this user |
+| `CACHE_DIR` | Yes | Path inside the container for cached credentials (use `/data`) |
+| `SPOTIFY_BOT_AUTOPLAY` | No | Auto-play similar tracks when queue ends (default: `false`) |
+| `SPOTIFY_DEVICE_NAME` | No | Name shown in Spotify's device list (default: `Aoede`) |
 
-Additionally, the following system libraries are needed (on Debian/Ubuntu):
+### 5. Build and Start
+
+The bot must be built from source to include DAVE (Discord Audio Voice Encryption) support:
+
+```bash
+docker compose build    # ~5-15 min first time
+docker compose up
+```
+
+### 6. First-Time Spotify Authentication
+
+On first run, there are no cached Spotify credentials. The bot will start a Spotify Connect discovery service. You'll see output like:
+
+```
+No cached credentials found, re-authentication required
+Starting Discovery service...
+Device name: Aoede
+Waiting for Spotify app to connect...
+```
+
+To authenticate:
+
+1. Open **Spotify** on your phone or desktop
+2. Tap the **device picker** (speaker icon at the bottom)
+3. Look for your device name (e.g. **"Aoede"**) and select it
+4. The bot authenticates and saves credentials to `aoede-cache/credentials.json`
+
+You'll see confirmation:
+
+```
+Credentials verified!
+Authentication complete!
+```
+
+Future restarts use the cached credentials automatically -- no re-authentication needed.
+
+### 7. Run in Background
+
+Once authentication is complete, restart the bot in detached mode:
+
+```bash
+docker compose up -d
+```
+
+The bot will:
+- Run in the background (no terminal needed)
+- Auto-restart on crash (`restart: unless-stopped`)
+- Auto-start when Docker/your machine boots
+
+### Managing the Bot
+
+```bash
+docker compose logs -f      # watch live logs
+docker compose restart      # restart the bot
+docker compose down         # stop the bot
+docker compose build        # rebuild after code changes
+```
+
+## What Happens at Runtime
+
+1. **Bot starts** and connects to Discord using your bot token
+2. **Bot appears offline** in Discord until the followed user joins a voice channel
+3. **User joins voice** -- bot enables Spotify Connect, device appears in Spotify
+4. **User selects device in Spotify** -- Spotify Connect session established
+5. **User plays music** -- bot joins the voice channel and streams audio
+6. **User changes tracks** -- audio switches seamlessly
+7. **User leaves voice** -- bot disconnects from voice and disables Spotify Connect
+
+## Building from Source (without Docker)
+
+Requirements: Rust 1.85+, automake, autoconf, cmake, libtool
 
 ```bash
 sudo apt-get install pkg-config libssl-dev libavahi-compat-libdnssd-dev libasound2-dev cmake
+cargo build --release
 ```
 
-Run `cargo build --release`. This will produce a binary at `target/release/aoede`. Set the required environment variables (see the Docker Compose section) and run the binary.
+Set the environment variables from the table above and run `./target/release/aoede`.
 
-### Configuration Options
+## Troubleshooting
 
-#### config.toml (Recommended)
-
-```toml
-# Required
-discord_token = "your_discord_bot_token"
-discord_user_id = 123456789
-
-# Cached credentials directory
-cache_dir = "aoede-cache"
-
-# Optional
-spotify_bot_autoplay = false
-spotify_device_name = "Aoede"
-```
-
-#### Environment Variables (Alternative)
-
-| Variable               | Required    | Description                                     |
-| ---------------------- | ----------- | ----------------------------------------------- |
-| `DISCORD_TOKEN`        | Yes         | Your Discord bot token                          |
-| `DISCORD_USER_ID`      | Yes         | The Discord user ID to follow                   |
-| `CACHE_DIR`            | Recommended | Directory containing cached Spotify credentials |
-| `SPOTIFY_BOT_AUTOPLAY` | No          | Enable autoplay (true/false)                    |
-| `SPOTIFY_DEVICE_NAME`  | No          | Custom device name (default: "Aoede")           |
-
-*Username/password are only needed if not using cached credentials. Environment variables override config.toml values.
-
-### Authentication Setup
-
-On first run (or if no cached credentials exist), Aoede will start a Spotify Connect discovery service:
-
-1. Open your Spotify app (phone or desktop)
-2. Look for the device name (default: "Aoede") in your device list
-3. Select the device to authenticate
-4. Credentials will be cached to `{CACHE_DIR}/credentials.json` for future use
-
-### Migrating from Username/Password
-
-If you previously used username/password authentication:
-
-1. Remove `SPOTIFY_USERNAME` and `SPOTIFY_PASSWORD` environment variables
-2. Add a `CACHE_DIR` environment variable pointing to your credentials directory
-3. On next startup, follow the discovery authentication flow above
-
-### Troubleshooting
-
-* **"Bad credentials" error**: Use cached credentials instead of username/password
-* **"No cached credentials found"**: Ensure `credentials.json` is in your cache directory, or let the bot run through the discovery flow
-* **Device not showing in Spotify**: Ensure the bot and Spotify are on the same network
-* **Credentials expired**: Re-run the credential generation process
+- **Bot joins but no audio**: Make sure you built from source (`docker compose build`). Pre-built images may not include DAVE (E2EE) support, which Discord requires for voice.
+- **"DNS-SD Error: Unknown"**: Avahi daemon is not running. Install and start it: `sudo systemctl start avahi-daemon`
+- **"Permission denied" on credentials**: Make sure `aoede-cache/` is owned by uid 1000: `chown -R 1000:1000 aoede-cache/`
+- **Device not showing in Spotify**: The bot and your Spotify app must be on the same network. Check that avahi-daemon is running and the container has the D-Bus/Avahi socket mounts.
+- **"Bad credentials" error**: Delete `aoede-cache/credentials.json` and re-run the discovery flow.
+- **Credentials expired**: Delete `aoede-cache/credentials.json` and restart the bot to re-authenticate.
 
 ## Credits
 
-This project is based on Aoede by codetheweb.
+Based on [Aoede](https://github.com/codetheweb/aoede) by codetheweb, with the [foylaou/aoede-Foy-](https://github.com/foylaou/aoede-Foy-) fork.
