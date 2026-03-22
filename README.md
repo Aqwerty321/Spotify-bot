@@ -1,8 +1,4 @@
-<p align="center">
-  <img width="250" height="250" src="https://raw.githubusercontent.com/codetheweb/aoede/main/.github/logo.png">
-</p>
-
-Aoede is a Discord music bot that streams **directly** from **Spotify to Discord**. The only interface is Spotify itself.
+This is a Discord music bot that streams **directly** from **Spotify to Discord**. The only interface is Spotify itself.
 
 > **Warning: Authentication Update (2024)**  
 > Spotify has deprecated username/password authentication. This fork includes support for **cached credentials** to fix authentication issues. See the [Authentication Setup](#authentication-setup) section below.
@@ -60,13 +56,14 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-```
+````
 
 ### Pre-built Binaries:
 
 Pre-built binaries are available on the [Releases page](https://github.com/foylaou/aoede-Foy-/releases). Download the binary for your platform, then in your terminal:
 
 # Linux && macOS
+
 ```bash
 chmod +x aoede-linux-x86_64
 DISCORD_TOKEN=your_token \
@@ -76,7 +73,9 @@ SPOTIFY_BOT_AUTOPLAY=true \
 SPOTIFY_DEVICE_NAME="MUSIC BOT" \
 ./aoede-linux-x86_64
 ```
+
 # Windows PowerShell
+
 ```shell
 $env:DISCORD_TOKEN = ""
 $env:SPOTIFY_DEVICE_NAME = ""
@@ -90,12 +89,12 @@ C:\aoede.exe
 
 Requirements:
 
-- automake
-- autoconf
-- cmake
-- libtool
-- Rust
-- Cargo
+* automake
+* autoconf
+* cmake
+* libtool
+* Rust
+* Cargo
 
 Additionally, the following system libraries are needed (on Debian/Ubuntu):
 
@@ -124,13 +123,13 @@ spotify_device_name = "Aoede"
 
 #### Environment Variables (Alternative)
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `DISCORD_TOKEN` | Yes | Your Discord bot token |
-| `DISCORD_USER_ID` | Yes | The Discord user ID to follow |
-| `CACHE_DIR` | Recommended | Directory containing cached Spotify credentials |
-| `SPOTIFY_BOT_AUTOPLAY` | No | Enable autoplay (true/false) |
-| `SPOTIFY_DEVICE_NAME` | No | Custom device name (default: "Aoede") |
+| Variable               | Required    | Description                                     |
+| ---------------------- | ----------- | ----------------------------------------------- |
+| `DISCORD_TOKEN`        | Yes         | Your Discord bot token                          |
+| `DISCORD_USER_ID`      | Yes         | The Discord user ID to follow                   |
+| `CACHE_DIR`            | Recommended | Directory containing cached Spotify credentials |
+| `SPOTIFY_BOT_AUTOPLAY` | No          | Enable autoplay (true/false)                    |
+| `SPOTIFY_DEVICE_NAME`  | No          | Custom device name (default: "Aoede")           |
 
 *Username/password are only needed if not using cached credentials. Environment variables override config.toml values.
 
@@ -153,7 +152,11 @@ If you previously used username/password authentication:
 
 ### Troubleshooting
 
-- **"Bad credentials" error**: Use cached credentials instead of username/password
-- **"No cached credentials found"**: Ensure `credentials.json` is in your cache directory, or let the bot run through the discovery flow
-- **Device not showing in Spotify**: Ensure the bot and Spotify are on the same network
-- **Credentials expired**: Re-run the credential generation process
+* **"Bad credentials" error**: Use cached credentials instead of username/password
+* **"No cached credentials found"**: Ensure `credentials.json` is in your cache directory, or let the bot run through the discovery flow
+* **Device not showing in Spotify**: Ensure the bot and Spotify are on the same network
+* **Credentials expired**: Re-run the credential generation process
+
+## Credits
+
+This project is based on Aoede by codetheweb.
