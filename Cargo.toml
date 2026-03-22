@@ -1,6 +1,6 @@
 [package]
 name = "aoede"
-version = "0.11.3"
+version = "0.12.0"
 authors = ["Max Isom <hi@maxisom.me>","Foy Laou <s225002731@gmail.com>"]
 edition = "2024"
 description = "A Discord music bot that streams directly from Spotify"
