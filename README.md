@@ -18,9 +18,9 @@ x86 and arm64 Docker images are provided.
 Linux x86_64 binaries and macOS ARM binaries are also available.
 
 ### Notes:
-⚠️ Aoede only supports bot tokens. Providing a user token will not work.
+⚠️ Spotify-bot only supports bot tokens. Providing a user token will not work.
 
-Aoede will appear offline until you join a voice channel it can access.
+Spotify-bot will appear offline until you join a voice channel it can access.
 
 ### Docker Compose (Recommended):
 
